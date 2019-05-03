@@ -8,7 +8,6 @@ Simulation in order to get the optimal number of tuning curve that will be used 
 """
 
 #%% Import useful modules
-from typing import Iterable
 
 import numpy as np
 import random as rand
@@ -91,7 +90,7 @@ distrib_type = 'transition'  # or 'bernoulli'
 [p1_dist_array, p1_mu_array, p1_sd_array] = neural_proba.import_distrib_param(n_subjects, n_sessions, n_stimuli,
                                                                               distrib_type)
 # Just for now
-n_subjects = 1
+n_subjects = 5
 
 # SNR as defined by ||signal||²/(||signal||²+||noise||²)
 snr = 0.1
@@ -233,9 +232,10 @@ def create_design_matrix(k_subject):
     print('Design matrix creation : Subject n'+str(k_subject)+' is done ! Time elapsed : '+str(end-start)+'s')
     return X
 
+
 #%%
-def whiten_design_matrix(X, k_subject):
-    X = X
+def whiten_design_matrix(k_subject):
+    X = create_design_matrix(k_subject)
     # X = create_design_matrix(k_subject)
     # GENERATE THE DESIGN MATRIX X FOR EACH SUBJECT
     whitening_done = False
@@ -267,8 +267,7 @@ def whiten_design_matrix(X, k_subject):
 
 #%%
 def compute_response_vector_weights(X):
-    X = X
-    #X = whiten_design_matrix(k_subject)
+    X = whiten_design_matrix(k_subject)
 
     # Initialization of the response vectors
 
@@ -432,10 +431,10 @@ def compute_response_vector_weights(X):
     print('y has been filtered!')
     return X, y_without_noise, y, weights
 
+
 #%%
-def z_scoring(X, y_without_noise, y, weights):
-    X, y_without_noise, y, weights = X, y_without_noise, y, weights
-    # X, y_without_noise, y, weights = compute_response_vector_weights(k_subject) # get the design matrix
+def z_scoring(k_subject):
+    X, y_without_noise, y, weights = compute_response_vector_weights(k_subject) # get the design matrix
 
     # Z-scoring of X and y
 
@@ -484,16 +483,17 @@ def z_scoring(X, y_without_noise, y, weights):
             ### End of z-scoring of y
 
     # Reajusting the weights after zscoring
-    for k_scheme, k_true_N, k_fraction, in itertools.product(range(n_schemes), range(n_N), range(n_fractions)):
+    for k_scheme, k_true_N, k_fraction in itertools.product(range(n_schemes), range(n_N), range(n_fractions)):
         for feature in range(weights[k_scheme][k_true_N][k_fraction].shape[0]):
             weights[k_scheme][k_true_N][k_fraction][feature] = weights[k_scheme][k_true_N][k_fraction][
                                                                    feature] * scaling_factor_X / snr_factor
 
     return Xz, yz, yz_without_noise, weights
 
+
 #%%
-def cross_validation(Xz, yz, yz_without_noise, weights):
-    # Xz, yz, yz_without_noise, weights = Xz, yz, yz_without_noise, weights
+def cross_validation(k_subject):
+    Xz, yz, yz_without_noise, weights = z_scoring(k_subject)
     start_cv = time.time()
     print('Cross-validation is starting...')
 
@@ -512,7 +512,6 @@ def cross_validation(Xz, yz, yz_without_noise, weights):
 
     ### BEGINNING OF LOOPS OVER HYPERPARAMETERS
     for k_scheme, k_fit_N in itertools.product(range(n_schemes), range(n_N)):
-        print('new scheme and k_fit_N!')
         for k_true_N, k_fraction in itertools.product(range(n_N), range(n_fractions)):
             print('new k_true_N and k_fraction!')
             k_direction = rand.randint(0, n_directions-1) # pick randomly
@@ -597,7 +596,7 @@ def cross_validation(Xz, yz, yz_without_noise, weights):
                     rho_true_test_all[k_dir2] = pearsonr(y_without_noise_test, y_pred2)[0]
 
                 best_test_direction = np.argwhere(rho_raw_test_all == np.amax(rho_raw_test_all)).flatten().tolist()
-                print('final direction:', best_test_direction)
+                # print('final direction:', best_test_direction)
                 # returns the index associated with the greatest rho score
 
                 # Save all scores
@@ -610,8 +609,10 @@ def cross_validation(Xz, yz, yz_without_noise, weights):
                 rho_true_test_final[k_scheme, k_fit_N, k_true_N, k_fraction, k_session] = rho_true_test_all[
                     best_test_direction[0]]
 
+        print('Simulation done for k_scheme '+str(k_fit_scheme)+' and k_fit_N '+str(k_fit_N)+'!')
+
     end_cv = time.time()
-    print('Cross validation is done for subject '+str(k_subject)+'! Time of CV: '+str(end_cv - start_cv)+' seconds.')
+    print('Cross validation is done for subject '+str(k_subject)+'! Time for CV: '+str(end_cv - start_cv)+' seconds.')
     return r2_raw_train_final, r2_true_train_final, rho_raw_train_final, rho_true_train_final,\
         r2_raw_test_final, r2_true_test_final, rho_raw_test_final, rho_true_test_final
 
@@ -619,26 +620,32 @@ def cross_validation(Xz, yz, yz_without_noise, weights):
 #%%
 def get_scores(k_subject):
     # Scores of the training and testing
-    r2_raw_train, r2_true_train, rho_raw_train, rho_true_train, r2_raw_test, r2_true_test, rho_raw_test, rho_true_test = cross_validation(k_subject)
-    np.save('/Users/tbounmy/Desktop/r2_raw_train_subj'+str(k_subject)+'.npy', r2_raw_train)
-    np.save('/Users/tbounmy/Desktop/rho_raw_train_subj' + str(k_subject) + '.npy', rho_raw_train)
-    np.save('/Users/tbounmy/Desktop/r2_true_train_subj' + str(k_subject) + '.npy', r2_true_train)
-    np.save('/Users/tbounmy/Desktop/rho_true_train_subj' + str(k_subject) + '.npy', rho_true_train)
-    np.save('/Users/tbounmy/Desktop/r2_raw_test_subj' + str(k_subject) + '.npy', r2_raw_test)
-    np.save('/Users/tbounmy/Desktop/rho_raw_test_subj' + str(k_subject) + '.npy', rho_raw_test)
-    np.save('/Users/tbounmy/Desktop/r2_true_test_subj' + str(k_subject) + '.npy', r2_true_test)
-    np.save('/Users/tbounmy/Desktop/rho_true_test_subj' + str(k_subject) + '.npy', rho_true_test)
+    r2_raw_train, r2_true_train, rho_raw_train, rho_true_train, r2_raw_test, r2_true_test, rho_raw_test, rho_true_test =\
+        cross_validation(k_subject)
+    #r2_raw_train, r2_true_train, rho_raw_train, rho_true_train, r2_raw_test, r2_true_test, rho_raw_test, rho_true_test = \
+    #    r2_raw_train_final, r2_true_train_final, rho_raw_train_final, rho_true_train_final,\
+    #    r2_raw_test_final, r2_true_test_final, rho_raw_test_final, rho_true_test_final
+    np.save('output/results/snr0.1/'+str(distrib_type)+'/r2_raw_train_snr'+str(snr)+'_subj'+str(k_subject)+'.npy', r2_raw_train)
+    np.save('output/results/snr0.1/'+str(distrib_type)+'/rho_raw_train_snr'+str(snr)+'_subj' + str(k_subject) + '.npy', rho_raw_train)
+    np.save('output/results/snr0.1/'+str(distrib_type)+'/r2_true_train_snr'+str(snr)+'_subj' + str(k_subject) + '.npy', r2_true_train)
+    np.save('output/results/snr0.1/'+str(distrib_type)+'/rho_true_train_snr'+str(snr)+'_subj' + str(k_subject) + '.npy', rho_true_train)
+    np.save('output/results/snr0.1/'+str(distrib_type)+'/r2_raw_test_snr'+str(snr)+'_subj' + str(k_subject) + '.npy', r2_raw_test)
+    np.save('output/results/snr0.1/'+str(distrib_type)+'/rho_raw_test_snr'+str(snr)+'_subj' + str(k_subject) + '.npy', rho_raw_test)
+    np.save('output/results/snr0.1/'+str(distrib_type)+'/r2_true_test_snr'+str(snr)+'_subj' + str(k_subject) + '.npy', r2_true_test)
+    np.save('output/results/snr0.1/'+str(distrib_type)+'/rho_true_test_snr'+str(snr)+'_subj' + str(k_subject) + '.npy', rho_true_test)
+    #print('subject '+str(k_subject)+' done!')
 
 
 #%%
 # Parallelisation
-# if __name__ == '__main__#    pool = mp.Pool(int(mp.cpu_count())) # Create a multiprocessing Pool
-#    test= pool.map(get_scores, range(n_subjects)) # process inputs iterable with pool
+if __name__ == '__main__':
+    pool = mp.Pool(int(mp.cpu_count()/2)) # Create a multiprocessing Pool
+    pool.map(get_scores, range(n_subjects)) # process inputs iterable with pool
 
 
 #%%
-for k_subject in range(n_subjects):
-    code_start = time.time()
-    get_scores(k_subject)
-    code_end = time.time()
-    print('Simulation for subject '+str(k_subject)+' done in '+str(code_end-code_start)+' seconds!')
+#for k_subject in range(n_subjects):
+#    code_start = time.time()
+#    get_scores(k_subject)
+#    code_end = time.time()
+#    print('Simulation for subject '+str(k_subject)+' done in '+str(code_end-code_start)+' seconds!')
