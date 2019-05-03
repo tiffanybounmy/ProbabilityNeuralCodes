@@ -8,6 +8,8 @@ Simulation in order to get the optimal number of tuning curve that will be used 
 """
 
 #%% Import useful modules
+from typing import Iterable
+
 import numpy as np
 import random as rand
 import neural_proba
@@ -105,6 +107,7 @@ def create_design_matrix(k_subject):
 
     '''Creation of X per subject'''
 
+    start = time.time()
     X = [[[[None for k_session in range(n_sessions)] for k_direction in range(n_directions)] for k_fit_N in range(n_N)]
          for k_fit_scheme in range(n_schemes)]
 
@@ -230,9 +233,10 @@ def create_design_matrix(k_subject):
     print('Design matrix creation : Subject n'+str(k_subject)+' is done ! Time elapsed : '+str(end-start)+'s')
     return X
 
-
-def whiten_design_matrix(k_subject):
-    X = create_design_matrix(k_subject)
+#%%
+def whiten_design_matrix(X, k_subject):
+    X = X
+    # X = create_design_matrix(k_subject)
     # GENERATE THE DESIGN MATRIX X FOR EACH SUBJECT
     whitening_done = False
 
@@ -261,9 +265,10 @@ def whiten_design_matrix(k_subject):
 
     return X_after_whitening
 
-
-def compute_response_vector_weights(k_subject):
-    X = whiten_design_matrix(k_subject)
+#%%
+def compute_response_vector_weights(X):
+    X = X
+    #X = whiten_design_matrix(k_subject)
 
     # Initialization of the response vectors
 
@@ -427,9 +432,10 @@ def compute_response_vector_weights(k_subject):
     print('y has been filtered!')
     return X, y_without_noise, y, weights
 
-
-def z_scoring(k_subject):
-    X, y_without_noise, y, weights = compute_response_vector_weights(k_subject) # get the design matrix
+#%%
+def z_scoring(X, y_without_noise, y, weights):
+    X, y_without_noise, y, weights = X, y_without_noise, y, weights
+    # X, y_without_noise, y, weights = compute_response_vector_weights(k_subject) # get the design matrix
 
     # Z-scoring of X and y
 
@@ -485,117 +491,152 @@ def z_scoring(k_subject):
 
     return Xz, yz, yz_without_noise, weights
 
+#%%
+def cross_validation(Xz, yz, yz_without_noise, weights):
+    # Xz, yz, yz_without_noise, weights = Xz, yz, yz_without_noise, weights
+    start_cv = time.time()
+    print('Cross-validation is starting...')
 
-def cross_validation(k_subject):
-    Xz, yz, yz_without_noise, weights = z_scoring(k_subject)
-    print('start cross-validation...')
     # The loops
 
-    # The quantity to be computed during the cross validation
-    r2_raw_test_final = np.zeros((n_schemes, n_N, n_N, n_fractions, n_sessions))
+    # The quantities to be computed during the cross validation
     r2_raw_train_final = np.zeros((n_schemes, n_N, n_N, n_fractions, n_sessions))
-    rho_raw_test_final = np.zeros((n_schemes, n_N, n_N, n_fractions, n_sessions))
+    r2_raw_test_final = np.zeros((n_schemes, n_N, n_N, n_fractions, n_sessions))
     rho_raw_train_final = np.zeros((n_schemes, n_N, n_N, n_fractions, n_sessions))
+    rho_raw_test_final = np.zeros((n_schemes, n_N, n_N, n_fractions, n_sessions))
 
-    r2_true_test_final = np.zeros((n_schemes, n_N, n_N, n_fractions, n_sessions))
     r2_true_train_final = np.zeros((n_schemes, n_N, n_N, n_fractions, n_sessions))
-    rho_true_test_final = np.zeros((n_schemes, n_N, n_N, n_fractions, n_sessions))
+    r2_true_test_final = np.zeros((n_schemes, n_N, n_N, n_fractions, n_sessions))
     rho_true_train_final = np.zeros((n_schemes, n_N, n_N, n_fractions, n_sessions))
+    rho_true_test_final = np.zeros((n_schemes, n_N, n_N, n_fractions, n_sessions))
 
     ### BEGINNING OF LOOPS OVER HYPERPARAMETERS
-    for k_scheme, k_fit_N, k_true_N, k_fraction, k_direction in itertools.product(range(n_schemes), range(n_N), range(n_N),
-                                                                     range(n_fractions), range(n_directions)):
-        # Current cross-validation matrix and response
-        X_cv = copy.deepcopy(Xz[k_scheme][k_fit_N])
-        y_cv = copy.deepcopy(yz[k_scheme][k_true_N][k_fraction][k_direction])
-        y_without_noise_cv = copy.deepcopy(yz_without_noise[k_scheme][k_true_N][k_fraction][k_direction])
+    for k_scheme, k_fit_N in itertools.product(range(n_schemes), range(n_N)):
+        print('new scheme and k_fit_N!')
+        for k_true_N, k_fraction in itertools.product(range(n_N), range(n_fractions)):
+            print('new k_true_N and k_fraction!')
+            k_direction = rand.randint(0, n_directions-1) # pick randomly
+            print('picked direction:', k_direction)
+            # Current cross-validation matrix and response
+            X_cv = copy.deepcopy(Xz[k_scheme][k_fit_N])
+            y_without_noise_cv = copy.deepcopy(yz_without_noise[k_scheme][k_true_N][k_fraction][k_direction])
+            y_cv = copy.deepcopy(yz[k_scheme][k_true_N][k_fraction][k_direction])
 
-        # LOOP OVER SESSIONS (CV)
-        for k_session in range(n_sessions):
-            # Train the model using the training set
-            y_train = copy.deepcopy(np.concatenate(y_cv[:k_session] + y_cv[k_session + 1:], axis=0))
-            y_without_noise_train = copy.deepcopy(
-                np.concatenate(y_without_noise_cv[:k_session] + y_without_noise_cv[k_session + 1:], axis=0))
+            # LOOP OVER SESSIONS (CV)
+            for k_session in range(n_sessions):
 
-            r2_raw_train_all = np.zeros(n_directions)  # save r2_scores for the different directions
-            rho_raw_train_all = np.zeros(n_directions)  # save rho scores for the different directions
-            r2_true_train_all = np.zeros(n_directions)
-            rho_true_train_all = np.zeros(n_directions)
+                # The scores that will be saved after the training for all directions
+                r2_raw_train_all = np.zeros(n_directions)
+                rho_raw_train_all = np.zeros(n_directions)
+                r2_true_train_all = np.zeros(n_directions)
+                rho_true_train_all = np.zeros(n_directions)
 
-            weights_train = []
-            for k_direction in range(n_directions):
-                X_train = copy.deepcopy(
-                    np.concatenate(X_cv[k_direction][:k_session] + X_cv[k_direction][k_session + 1:], axis=0))
+                weights_train = []
+                for k_dir in range(n_directions):
 
-                regr.fit(X_train, y_train)
-                y_hat_train = regr.predict(X_train)
-                weights_train.append(regr.coef_)
+                    # Train the model using the training set
+                    y_train = copy.deepcopy(np.concatenate(y_cv[:k_session] + y_cv[k_session + 1:], axis=0))
+                    y_without_noise_train = copy.deepcopy(
+                        np.concatenate(y_without_noise_cv[:k_session] + y_without_noise_cv[k_session + 1:], axis=0))
 
-                # Train results
-                r2_raw_train_all[k_direction] = r2_score(y_train, y_hat_train)
-                rho_raw_train_all[k_direction] = pearsonr(y_train, y_hat_train)[0]
-                r2_true_train_all[k_direction] = r2_score(y_without_noise_train, y_hat_train)
-                rho_true_train_all[k_direction] = pearsonr(y_without_noise_train, y_hat_train)[0]
+                    X_train = copy.deepcopy(
+                        np.concatenate(X_cv[k_dir][:k_session] + X_cv[k_dir][k_session + 1:], axis=0))
 
-            # Save results for later
-            index_max_r2_score_train = np.argwhere(r2_true_train_all == np.amax(r2_true_train_all)).flatten().tolist()
-            r2_raw_train_final[k_scheme, k_fit_N, k_true_N, k_fraction, k_session] = np.amax(r2_raw_train_all)
-            rho_raw_train_final[k_scheme, k_fit_N, k_true_N, k_fraction, k_session] = np.amax(rho_raw_train_all)
-            r2_true_train_final[k_scheme, k_fit_N, k_true_N, k_fraction, k_session] = np.amax(r2_true_train_all)
-            rho_true_train_final[k_scheme, k_fit_N, k_true_N, k_fraction, k_session] = np.amax(rho_true_train_all)
+                    regr.fit(X_train, y_train) # perform the training with y_with_noise
+                    y_hat_train = regr.predict(X_train)
+                    weights_train.append(regr.coef_)
 
-            # regr.coef_ = weights_train[index_max_r2_score_train[0]]
-            X_train = copy.deepcopy(np.concatenate(
-                X_cv[index_max_r2_score_train[0]][:k_session] + X_cv[index_max_r2_score_train[0]][k_session + 1:],
-                axis=0))
-            regr.fit(X_train, y_train)
+                    # Train results - save scores for all directions
+                    r2_raw_train_all[k_dir] = r2_score(y_train, y_hat_train)
+                    rho_raw_train_all[k_dir] = pearsonr(y_train, y_hat_train)[0]
+                    r2_true_train_all[k_dir] = r2_score(y_without_noise_train, y_hat_train)
+                    rho_true_train_all[k_dir] = pearsonr(y_without_noise_train, y_hat_train)[0]
 
-            # Make predictions using the testing set
+                ## Save results for later
+                # Select the best directions
+                best_train_direction_i = np.argwhere(rho_raw_train_all == np.amax(rho_raw_train_all)).flatten().tolist()
+                print('best train direction indexes:', best_train_direction_i) # should get at least 2 directions
+                r2_raw_train_final[k_scheme, k_fit_N, k_true_N, k_fraction, k_session] = r2_raw_train_all[
+                    best_train_direction_i[0]]
+                rho_raw_train_final[k_scheme, k_fit_N, k_true_N, k_fraction, k_session] = rho_raw_train_all[
+                    best_train_direction_i[0]]
+                r2_true_train_final[k_scheme, k_fit_N, k_true_N, k_fraction, k_session] = rho_raw_train_all[
+                    best_train_direction_i[0]]
+                rho_true_train_final[k_scheme, k_fit_N, k_true_N, k_fraction, k_session] = rho_raw_train_all[
+                    best_train_direction_i[0]]
 
-            y_test = copy.deepcopy(y_cv[k_session])
-            y_without_noise_test = copy.deepcopy(y_without_noise_cv[k_session])
+                regr.coef_ = weights_train[best_train_direction_i[0]] # save the weights
+                # X_train = copy.deepcopy(np.concatenate(
+                #    X_cv[best_train_direction_i[0]][:k_session] + X_cv[best_train_direction_i[0]][k_session + 1:],
+                #    axis=0)) # to delete because computationally too heavy
+                # regr.fit(X_train, y_train) # to do if we don't set the weights manually
 
-            r2_raw_test_all = np.zeros(len(index_max_r2_score_train))
-            rho_raw_test_all = np.zeros(len(index_max_r2_score_train))
-            r2_true_test_all = np.zeros(len(index_max_r2_score_train))
-            rho_true_test_all = np.zeros(len(index_max_r2_score_train))
+                # Make predictions using the testing set
+                y_test = copy.deepcopy(y_cv[k_session])
+                y_without_noise_test = copy.deepcopy(y_without_noise_cv[k_session])
 
-            for i in range(len(index_max_r2_score_train)):  # test with the two different directions
-                X_test = copy.deepcopy(X_cv[index_max_r2_score_train[i]][k_session])
-                y_pred = regr.predict(X_test)
-                y_pred_tmp = np.transpose(np.array([y_pred]))
+                # Scores that will be saved after the test
+                r2_raw_test_all = np.zeros(len(best_train_direction_i))
+                rho_raw_test_all = np.zeros(len(best_train_direction_i))
+                r2_true_test_all = np.zeros(len(best_train_direction_i))
+                rho_true_test_all = np.zeros(len(best_train_direction_i))
 
-                # Second fit
-                regr2.fit(y_pred_tmp, y_test)
-                y_pred2 = regr2.predict(y_pred_tmp)
+                for k_dir2 in range(len(best_train_direction_i)):  # test on the session left with two conditions
+                    X_test = copy.deepcopy(X_cv[best_train_direction_i[k_dir2]][k_session])
+                    y_pred = regr.predict(X_test)
+                    y_pred_tmp = np.transpose(np.array([y_pred]))
 
-                # Test results
-                r2_raw_test_all[i] = r2_score(y_test, y_pred2)
-                rho_raw_test_all[i] = pearsonr(y_test, y_pred2)[0]
-                r2_true_test_all[i] = r2_score(y_without_noise_test, y_pred2)
-                rho_true_test_all[i] = pearsonr(y_without_noise_test, y_pred2)[0]
+                    # Second fit
+                    regr2.fit(y_pred_tmp, y_test)
+                    y_pred2 = regr2.predict(y_pred_tmp)
 
-            index_max_r2_score_test = np.argmax(
-                r2_true_test_all)  # returns the index associated with the greatest r2_score
+                    # Test results
+                    r2_raw_test_all[k_dir2] = r2_score(y_test, y_pred2)
+                    rho_raw_test_all[k_dir2] = pearsonr(y_test, y_pred2)[0]
+                    r2_true_test_all[k_dir2] = r2_score(y_without_noise_test, y_pred2)
+                    rho_true_test_all[k_dir2] = pearsonr(y_without_noise_test, y_pred2)[0]
 
-            r2_raw_test_final[k_scheme, k_fit_N, k_true_N, k_fraction, k_session] = np.amax(r2_raw_test_all)
-            r2_true_test_final[k_scheme, k_fit_N, k_true_N, k_fraction, k_session] = np.amax(r2_true_test_all)
-            rho_raw_test_final[k_scheme, k_fit_N, k_true_N, k_fraction, k_session] = np.amax(rho_raw_test_all)
-            rho_true_test_final[k_scheme, k_fit_N, k_true_N, k_fraction, k_session] = np.amax(rho_true_test_all)
+                best_test_direction = np.argwhere(rho_raw_test_all == np.amax(rho_raw_test_all)).flatten().tolist()
+                print('final direction:', best_test_direction)
+                # returns the index associated with the greatest rho score
 
-    end = time.time()
-    return r2_raw_test_final
+                # Save all scores
+                r2_raw_test_final[k_scheme, k_fit_N, k_true_N, k_fraction, k_session] = r2_raw_test_all[
+                    best_test_direction[0]]
+                r2_true_test_final[k_scheme, k_fit_N, k_true_N, k_fraction, k_session] = r2_true_test_all[
+                    best_test_direction[0]]
+                rho_raw_test_final[k_scheme, k_fit_N, k_true_N, k_fraction, k_session] = rho_raw_test_all[
+                    best_test_direction[0]]
+                rho_true_test_final[k_scheme, k_fit_N, k_true_N, k_fraction, k_session] = rho_true_test_all[
+                    best_test_direction[0]]
+
+    end_cv = time.time()
+    print('Cross validation is done for subject '+str(k_subject)+'! Time of CV: '+str(end_cv - start_cv)+' seconds.')
+    return r2_raw_train_final, r2_true_train_final, rho_raw_train_final, rho_true_train_final,\
+        r2_raw_test_final, r2_true_test_final, rho_raw_test_final, rho_true_test_final
 
 
+#%%
 def get_scores(k_subject):
-    r2_raw_test_final = cross_validation(k_subject)
-    np.save('/Users/tbounmy/Desktop/test1.npy', r2_raw_test_final)
+    # Scores of the training and testing
+    r2_raw_train, r2_true_train, rho_raw_train, rho_true_train, r2_raw_test, r2_true_test, rho_raw_test, rho_true_test = cross_validation(k_subject)
+    np.save('/Users/tbounmy/Desktop/r2_raw_train_subj'+str(k_subject)+'.npy', r2_raw_train)
+    np.save('/Users/tbounmy/Desktop/rho_raw_train_subj' + str(k_subject) + '.npy', rho_raw_train)
+    np.save('/Users/tbounmy/Desktop/r2_true_train_subj' + str(k_subject) + '.npy', r2_true_train)
+    np.save('/Users/tbounmy/Desktop/rho_true_train_subj' + str(k_subject) + '.npy', rho_true_train)
+    np.save('/Users/tbounmy/Desktop/r2_raw_test_subj' + str(k_subject) + '.npy', r2_raw_test)
+    np.save('/Users/tbounmy/Desktop/rho_raw_test_subj' + str(k_subject) + '.npy', rho_raw_test)
+    np.save('/Users/tbounmy/Desktop/r2_true_test_subj' + str(k_subject) + '.npy', r2_true_test)
+    np.save('/Users/tbounmy/Desktop/rho_true_test_subj' + str(k_subject) + '.npy', rho_true_test)
 
+
+#%%
 # Parallelisation
-#if __name__ == '__main__#    pool = mp.Pool(int(mp.cpu_count())) # Create a multiprocessing Pool
+# if __name__ == '__main__#    pool = mp.Pool(int(mp.cpu_count())) # Create a multiprocessing Pool
 #    test= pool.map(get_scores, range(n_subjects)) # process inputs iterable with pool
 
 
+#%%
 for k_subject in range(n_subjects):
     code_start = time.time()
     get_scores(k_subject)
