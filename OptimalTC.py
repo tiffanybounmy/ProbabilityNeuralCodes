@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Wed Mar  6 13:58:22 2019
 @authors: Sébastien Demortain and Tiffany Bounmy
 
 Simulation in order to get the optimal number of tuning curve that will be used for each scheme
 """
 
 #%% Import useful modules
+from typing import Iterable
 
 import numpy as np
 import random as rand
@@ -609,7 +609,7 @@ def cross_validation(k_subject):
                 rho_true_test_final[k_scheme, k_fit_N, k_true_N, k_fraction, k_session] = rho_true_test_all[
                     best_test_direction[0]]
 
-        print('Simulation done for k_scheme '+str(k_fit_scheme)+' and k_fit_N '+str(k_fit_N)+'!')
+        print('Simulation done for k_scheme '+str(k_scheme)+' and k_fit_N '+str(k_fit_N)+'!')
 
     end_cv = time.time()
     print('Cross validation is done for subject '+str(k_subject)+'! Time for CV: '+str(end_cv - start_cv)+' seconds.')
@@ -622,9 +622,6 @@ def get_scores(k_subject):
     # Scores of the training and testing
     r2_raw_train, r2_true_train, rho_raw_train, rho_true_train, r2_raw_test, r2_true_test, rho_raw_test, rho_true_test =\
         cross_validation(k_subject)
-    #r2_raw_train, r2_true_train, rho_raw_train, rho_true_train, r2_raw_test, r2_true_test, rho_raw_test, rho_true_test = \
-    #    r2_raw_train_final, r2_true_train_final, rho_raw_train_final, rho_true_train_final,\
-    #    r2_raw_test_final, r2_true_test_final, rho_raw_test_final, rho_true_test_final
     np.save('output/results/snr0.1/'+str(distrib_type)+'/r2_raw_train_snr'+str(snr)+'_subj'+str(k_subject)+'.npy', r2_raw_train)
     np.save('output/results/snr0.1/'+str(distrib_type)+'/rho_raw_train_snr'+str(snr)+'_subj' + str(k_subject) + '.npy', rho_raw_train)
     np.save('output/results/snr0.1/'+str(distrib_type)+'/r2_true_train_snr'+str(snr)+'_subj' + str(k_subject) + '.npy', r2_true_train)
@@ -638,14 +635,14 @@ def get_scores(k_subject):
 
 #%%
 # Parallelisation
-if __name__ == '__main__':
-    pool = mp.Pool(int(mp.cpu_count()/2)) # Create a multiprocessing Pool
-    pool.map(get_scores, range(n_subjects)) # process inputs iterable with pool
+#if __name__ == '__main__':
+#    pool = mp.Pool(int(mp.cpu_count()/2)) # Create a multiprocessing Pool
+#    pool.map(get_scores, range(n_subjects)) # process inputs iterable with pool
 
 
 #%%
-#for k_subject in range(n_subjects):
-#    code_start = time.time()
-#    get_scores(k_subject)
-#    code_end = time.time()
-#    print('Simulation for subject '+str(k_subject)+' done in '+str(code_end-code_start)+' seconds!')
+for k_subject in range(n_subjects):
+    code_start = time.time()
+    get_scores(k_subject)
+    code_end = time.time()
+    print('Simulation for subject '+str(k_subject)+' done in '+str(code_end-code_start)+' seconds!')
