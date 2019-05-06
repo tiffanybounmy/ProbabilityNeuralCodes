@@ -90,7 +90,7 @@ distrib_type = 'transition'  # or 'bernoulli'
 [p1_dist_array, p1_mu_array, p1_sd_array] = neural_proba.import_distrib_param(n_subjects, n_sessions, n_stimuli,
                                                                               distrib_type)
 # Just for now
-n_subjects = 5
+n_subjects = 1
 
 # SNR as defined by ||signal||²/(||signal||²+||noise||²)
 snr = 0.1
@@ -515,7 +515,7 @@ def cross_validation(k_subject):
         for k_true_N, k_fraction in itertools.product(range(n_N), range(n_fractions)):
             print('new k_true_N and k_fraction!')
             k_direction = rand.randint(0, n_directions-1) # pick randomly
-            print('picked direction:', k_direction)
+            #print('picked direction:', k_direction)
             # Current cross-validation matrix and response
             X_cv = copy.deepcopy(Xz[k_scheme][k_fit_N])
             y_without_noise_cv = copy.deepcopy(yz_without_noise[k_scheme][k_true_N][k_fraction][k_direction])
@@ -554,7 +554,7 @@ def cross_validation(k_subject):
                 ## Save results for later
                 # Select the best directions
                 best_train_direction_i = np.argwhere(rho_raw_train_all == np.amax(rho_raw_train_all)).flatten().tolist()
-                print('best train direction indexes:', best_train_direction_i) # should get at least 2 directions
+                # print('best train direction indexes:', best_train_direction_i) # should get at least 2 directions
                 r2_raw_train_final[k_scheme, k_fit_N, k_true_N, k_fraction, k_session] = r2_raw_train_all[
                     best_train_direction_i[0]]
                 rho_raw_train_final[k_scheme, k_fit_N, k_true_N, k_fraction, k_session] = rho_raw_train_all[
@@ -625,27 +625,27 @@ def get_scores(k_subject):
     #r2_raw_train, r2_true_train, rho_raw_train, rho_true_train, r2_raw_test, r2_true_test, rho_raw_test, rho_true_test = \
     #    r2_raw_train_final, r2_true_train_final, rho_raw_train_final, rho_true_train_final,\
     #    r2_raw_test_final, r2_true_test_final, rho_raw_test_final, rho_true_test_final
-    np.save('output/results/snr0.1/'+str(distrib_type)+'/r2_raw_train_snr'+str(snr)+'_subj'+str(k_subject)+'.npy', r2_raw_train)
-    np.save('output/results/snr0.1/'+str(distrib_type)+'/rho_raw_train_snr'+str(snr)+'_subj' + str(k_subject) + '.npy', rho_raw_train)
-    np.save('output/results/snr0.1/'+str(distrib_type)+'/r2_true_train_snr'+str(snr)+'_subj' + str(k_subject) + '.npy', r2_true_train)
-    np.save('output/results/snr0.1/'+str(distrib_type)+'/rho_true_train_snr'+str(snr)+'_subj' + str(k_subject) + '.npy', rho_true_train)
-    np.save('output/results/snr0.1/'+str(distrib_type)+'/r2_raw_test_snr'+str(snr)+'_subj' + str(k_subject) + '.npy', r2_raw_test)
-    np.save('output/results/snr0.1/'+str(distrib_type)+'/rho_raw_test_snr'+str(snr)+'_subj' + str(k_subject) + '.npy', rho_raw_test)
-    np.save('output/results/snr0.1/'+str(distrib_type)+'/r2_true_test_snr'+str(snr)+'_subj' + str(k_subject) + '.npy', r2_true_test)
-    np.save('output/results/snr0.1/'+str(distrib_type)+'/rho_true_test_snr'+str(snr)+'_subj' + str(k_subject) + '.npy', rho_true_test)
+    np.save('/neurospin/unicog/protocols/IRMf/Meyniel_MarkovGuess_2014/ENCODAGE/cross_validation/output/results/snr0.1/'+str(distrib_type)+'/r2_raw_train_snr'+str(snr)+'_subj'+str(k_subject)+'.npy', r2_raw_train)
+    np.save('/neurospin/unicog/protocols/IRMf/Meyniel_MarkovGuess_2014/ENCODAGE/cross_validation/output/results/snr0.1/'+str(distrib_type)+'/rho_raw_train_snr'+str(snr)+'_subj' + str(k_subject) + '.npy', rho_raw_train)
+    np.save('/neurospin/unicog/protocols/IRMf/Meyniel_MarkovGuess_2014/ENCODAGE/cross_validation/output/results/snr0.1/'+str(distrib_type)+'/r2_true_train_snr'+str(snr)+'_subj' + str(k_subject) + '.npy', r2_true_train)
+    np.save('/neurospin/unicog/protocols/IRMf/Meyniel_MarkovGuess_2014/ENCODAGE/cross_validation/output/results/snr0.1/'+str(distrib_type)+'/rho_true_train_snr'+str(snr)+'_subj' + str(k_subject) + '.npy', rho_true_train)
+    np.save('/neurospin/unicog/protocols/IRMf/Meyniel_MarkovGuess_2014/ENCODAGE/cross_validation/output/results/snr0.1/'+str(distrib_type)+'/r2_raw_test_snr'+str(snr)+'_subj' + str(k_subject) + '.npy', r2_raw_test)
+    np.save('/neurospin/unicog/protocols/IRMf/Meyniel_MarkovGuess_2014/ENCODAGE/cross_validation/output/results/snr0.1/'+str(distrib_type)+'/rho_raw_test_snr'+str(snr)+'_subj' + str(k_subject) + '.npy', rho_raw_test)
+    np.save('/neurospin/unicog/protocols/IRMf/Meyniel_MarkovGuess_2014/ENCODAGE/cross_validation/output/results/snr0.1/'+str(distrib_type)+'/r2_true_test_snr'+str(snr)+'_subj' + str(k_subject) + '.npy', r2_true_test)
+    np.save('/neurospin/unicog/protocols/IRMf/Meyniel_MarkovGuess_2014/ENCODAGE/cross_validation/output/results/snr0.1/'+str(distrib_type)+'/rho_true_test_snr'+str(snr)+'_subj' + str(k_subject) + '.npy', rho_true_test)
     #print('subject '+str(k_subject)+' done!')
 
 
 #%%
 # Parallelisation
-if __name__ == '__main__':
-    pool = mp.Pool(int(mp.cpu_count()/2)) # Create a multiprocessing Pool
-    pool.map(get_scores, range(n_subjects)) # process inputs iterable with pool
+#if __name__ == '__main__':
+#    pool = mp.Pool(int(mp.cpu_count()/2)) # Create a multiprocessing Pool
+#    pool.map(get_scores, range(n_subjects)) # process inputs iterable with pool
 
 
 #%%
-#for k_subject in range(n_subjects):
-#    code_start = time.time()
-#    get_scores(k_subject)
-#    code_end = time.time()
-#    print('Simulation for subject '+str(k_subject)+' done in '+str(code_end-code_start)+' seconds!')
+for k_subject in range(n_subjects):
+    code_start = time.time()
+    get_scores(k_subject)
+    code_end = time.time()
+    print('Simulation for subject '+str(k_subject)+' done in '+str(code_end-code_start)+' seconds!')
