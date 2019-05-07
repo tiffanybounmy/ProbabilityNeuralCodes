@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+##!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
 Created on Wed Mar  6 13:58:22 2019
@@ -626,14 +626,14 @@ def get_scores(k_subject):
     # Scores of the training and testing
     r2_raw_train, r2_true_train, rho_raw_train, rho_true_train, r2_raw_test, r2_true_test, rho_raw_test, rho_true_test =\
         cross_validation(k_subject)
-    np.save('output/results/snr0.1/'+str(distrib_type)+'/r2_raw_train_snr'+str(snr)+'_subj'+str(k_subject)+'.npy', r2_raw_train)
-    np.save('output/results/snr0.1/'+str(distrib_type)+'/rho_raw_train_snr'+str(snr)+'_subj' + str(k_subject) + '.npy', rho_raw_train)
-    np.save('output/results/snr0.1/'+str(distrib_type)+'/r2_true_train_snr'+str(snr)+'_subj' + str(k_subject) + '.npy', r2_true_train)
-    np.save('output/results/snr0.1/'+str(distrib_type)+'/rho_true_train_snr'+str(snr)+'_subj' + str(k_subject) + '.npy', rho_true_train)
-    np.save('output/results/snr0.1/'+str(distrib_type)+'/r2_raw_test_snr'+str(snr)+'_subj' + str(k_subject) + '.npy', r2_raw_test)
-    np.save('output/results/snr0.1/'+str(distrib_type)+'/rho_raw_test_snr'+str(snr)+'_subj' + str(k_subject) + '.npy', rho_raw_test)
-    np.save('output/results/snr0.1/'+str(distrib_type)+'/r2_true_test_snr'+str(snr)+'_subj' + str(k_subject) + '.npy', r2_true_test)
-    np.save('output/results/snr0.1/'+str(distrib_type)+'/rho_true_test_snr'+str(snr)+'_subj' + str(k_subject) + '.npy', rho_true_test)
+    np.save('/neurospin/unicog/protocols/IRMf/Meyniel_MarkovGuess_2014/ENCODAGE/cross_validation/output/results/snr0.1/'+str(distrib_type)+'/r2_raw_train_snr'+str(snr)+'_subj'+str(k_subject)+'.npy', r2_raw_train)
+    np.save('/neurospin/unicog/protocols/IRMf/Meyniel_MarkovGuess_2014/ENCODAGE/cross_validation/output/results/snr0.1/'+str(distrib_type)+'/rho_raw_train_snr'+str(snr)+'_subj' + str(k_subject) + '.npy', rho_raw_train)
+    np.save('/neurospin/unicog/protocols/IRMf/Meyniel_MarkovGuess_2014/ENCODAGE/cross_validation/output/results/snr0.1/'+str(distrib_type)+'/r2_true_train_snr'+str(snr)+'_subj' + str(k_subject) + '.npy', r2_true_train)
+    np.save('/neurospin/unicog/protocols/IRMf/Meyniel_MarkovGuess_2014/ENCODAGE/cross_validation/output/results/snr0.1/'+str(distrib_type)+'/rho_true_train_snr'+str(snr)+'_subj' + str(k_subject) + '.npy', rho_true_train)
+    np.save('/neurospin/unicog/protocols/IRMf/Meyniel_MarkovGuess_2014/ENCODAGE/cross_validation/output/results/snr0.1/'+str(distrib_type)+'/r2_raw_test_snr'+str(snr)+'_subj' + str(k_subject) + '.npy', r2_raw_test)
+    np.save('/neurospin/unicog/protocols/IRMf/Meyniel_MarkovGuess_2014/ENCODAGE/cross_validation/output/results/snr0.1/'+str(distrib_type)+'/rho_raw_test_snr'+str(snr)+'_subj' + str(k_subject) + '.npy', rho_raw_test)
+    np.save('/neurospin/unicog/protocols/IRMf/Meyniel_MarkovGuess_2014/ENCODAGE/cross_validation/output/results/snr0.1/'+str(distrib_type)+'/r2_true_test_snr'+str(snr)+'_subj' + str(k_subject) + '.npy', r2_true_test)
+    np.save('/neurospin/unicog/protocols/IRMf/Meyniel_MarkovGuess_2014/ENCODAGE/cross_validation/output/results/snr0.1/'+str(distrib_type)+'/rho_true_test_snr'+str(snr)+'_subj' + str(k_subject) + '.npy', rho_true_test)
     print('subject '+str(k_subject)+' done!')
 
 
