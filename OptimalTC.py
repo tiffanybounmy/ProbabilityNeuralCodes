@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
+Created on Wed Mar  6 13:58:22 2019
 @authors: Sébastien Demortain and Tiffany Bounmy
 
 Simulation in order to get the optimal number of tuning curve that will be used for each scheme
@@ -90,7 +91,7 @@ distrib_type = 'transition'  # or 'bernoulli'
 [p1_dist_array, p1_mu_array, p1_sd_array] = neural_proba.import_distrib_param(n_subjects, n_sessions, n_stimuli,
                                                                               distrib_type)
 # Just for now
-n_subjects = 5
+n_subjects = 1000
 
 # SNR as defined by ||signal||²/(||signal||²+||noise||²)
 snr = 0.1
@@ -161,11 +162,13 @@ def create_design_matrix(k_subject):
             # Get the data of interest
             if directions[k_direction, k_session] == 0:
                 mu = p1_mu_array[k_subject, k_session, :n_stimuli]
+                dist = p1_dist_array[k_subject, k_session, :, :n_stimuli]
             else:
                 mu = 1 - (p1_mu_array[k_subject, k_session, :n_stimuli])
+                dist = np.flipud(p1_dist_array[k_subject, k_session, :, :n_stimuli])
+
             sigma = p1_sd_array[k_subject, k_session, :n_stimuli]
             conf = -np.log(sigma)
-            dist = p1_dist_array[k_subject, k_session, :, :n_stimuli]
 
             # Formatting
             simulated_distrib = [None for k in range(n_stimuli)]
@@ -236,7 +239,6 @@ def create_design_matrix(k_subject):
 #%%
 def whiten_design_matrix(k_subject):
     X = create_design_matrix(k_subject)
-    # X = create_design_matrix(k_subject)
     # GENERATE THE DESIGN MATRIX X FOR EACH SUBJECT
     whitening_done = False
 
@@ -262,6 +264,8 @@ def whiten_design_matrix(k_subject):
     whitening_done = True
 
     X_after_whitening = copy.deepcopy(X)
+
+    print('Whitening done!')
 
     return X_after_whitening
 
@@ -307,7 +311,6 @@ def compute_response_vector_weights(X):
 
         # LOOP OVER N_true
         for k_true_N in range(n_N):
-            print('Iteration ' + str(k_true_N))
             true_N = N_array[k_true_N]
             # Creation of the true tuning curve objects
             true_t_mu = true_t_mu_array[k_true_N]
@@ -488,6 +491,7 @@ def z_scoring(k_subject):
             weights[k_scheme][k_true_N][k_fraction][feature] = weights[k_scheme][k_true_N][k_fraction][
                                                                    feature] * scaling_factor_X / snr_factor
 
+    print('Z-scoring done!')
     return Xz, yz, yz_without_noise, weights
 
 
@@ -513,9 +517,9 @@ def cross_validation(k_subject):
     ### BEGINNING OF LOOPS OVER HYPERPARAMETERS
     for k_scheme, k_fit_N in itertools.product(range(n_schemes), range(n_N)):
         for k_true_N, k_fraction in itertools.product(range(n_N), range(n_fractions)):
-            print('new k_true_N and k_fraction!')
+            # print('new k_true_N and k_fraction!')
             k_direction = rand.randint(0, n_directions-1) # pick randomly
-            print('picked direction:', k_direction)
+            # print('picked direction:', k_direction)
             # Current cross-validation matrix and response
             X_cv = copy.deepcopy(Xz[k_scheme][k_fit_N])
             y_without_noise_cv = copy.deepcopy(yz_without_noise[k_scheme][k_true_N][k_fraction][k_direction])
@@ -554,7 +558,7 @@ def cross_validation(k_subject):
                 ## Save results for later
                 # Select the best directions
                 best_train_direction_i = np.argwhere(rho_raw_train_all == np.amax(rho_raw_train_all)).flatten().tolist()
-                print('best train direction indexes:', best_train_direction_i) # should get at least 2 directions
+                # print('best train direction indexes:', best_train_direction_i) # should get at least 2 directions
                 r2_raw_train_final[k_scheme, k_fit_N, k_true_N, k_fraction, k_session] = r2_raw_train_all[
                     best_train_direction_i[0]]
                 rho_raw_train_final[k_scheme, k_fit_N, k_true_N, k_fraction, k_session] = rho_raw_train_all[
@@ -630,7 +634,7 @@ def get_scores(k_subject):
     np.save('output/results/snr0.1/'+str(distrib_type)+'/rho_raw_test_snr'+str(snr)+'_subj' + str(k_subject) + '.npy', rho_raw_test)
     np.save('output/results/snr0.1/'+str(distrib_type)+'/r2_true_test_snr'+str(snr)+'_subj' + str(k_subject) + '.npy', r2_true_test)
     np.save('output/results/snr0.1/'+str(distrib_type)+'/rho_true_test_snr'+str(snr)+'_subj' + str(k_subject) + '.npy', rho_true_test)
-    #print('subject '+str(k_subject)+' done!')
+    print('subject '+str(k_subject)+' done!')
 
 
 #%%
