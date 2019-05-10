@@ -31,34 +31,35 @@ from neural_proba import experiment
 from neural_proba import fmri
 
 #%%
-# Define parameters
-# All parameters are here
+# Define parameters (all parameters are here)
 
 # Define the seed to reproduce results from random processes
 rand.seed(10)
 
 # INPUTS
 
-# The parameters related to the scheme
+# List of schemes that we test
 scheme_array = ['gaussian_ppc', 'sigmoid_ppc', 'gaussian_dpc', 'sigmoid_dpc']
 n_schemes = len(scheme_array)
 
-# The parameters related to the tuning curves to be explored
+# Number of tuning curve that we test
 N_array = np.array([2, 3, 4, 5, 6, 7, 8, 10, 14, 20])
 
+# ??? what is this?
 t_mu_gaussian_array = np.array([0.15, 0.12, 0.1, 8e-2, 7e-2, 6e-2, 5e-2, 4e-2, 3e-2, 2e-2])
 t_conf_gaussian_array = np.array([0.25, 0.2, 0.15, 0.12, 0.10, 9e-2, 8e-2, 6e-2, 4e-2, 3e-2])
 
+# ??? what is this?
 t_mu_sigmoid_array = np.sqrt(2 * np.pi) / 4 * t_mu_gaussian_array
 t_conf_sigmoid_array = np.sqrt(2 * np.pi) / 4 * t_conf_gaussian_array
 
 # Lower and upper bounds of the encoded summary quantity (for tuning curves)
-tc_lower_bound_mu = 0
-tc_upper_bound_mu = 1
-tc_lower_bound_conf = 1.1
-# we define the upper bound to be a bit away from the highest uncertainty
-tc_upper_bound_conf = 2.6
+tc_lower_bound_mu = 0 # probability
+tc_upper_bound_mu = 1  # probability
+tc_lower_bound_conf = 1.1 # range found in this experiment
+tc_upper_bound_conf = 2.6 # range found in this experiment
 
+# !!! Florent, continue here.
 # The number of N to be tested
 n_N = len(N_array)
 
