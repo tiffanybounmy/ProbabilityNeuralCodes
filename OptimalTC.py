@@ -263,11 +263,11 @@ def whiten_design_matrix(k_subject):
 
     whitening_done = True
 
-    X_after_whitening = copy.deepcopy(X)
+    # X_after_whitening = copy.deepcopy(X)
 
     print('Whitening done!')
 
-    return X_after_whitening
+    return X
 
 #%%
 def compute_response_vector_weights(X):
@@ -333,9 +333,7 @@ def compute_response_vector_weights(X):
             n_subpopulation_fractions = int(n_fractions / n_population_fractions)
             fraction_counter = 0
             for k_subpopulation_fraction in range(n_subpopulation_fractions):
-                # print(k_subpopulation_fraction)
                 for k_population_fraction, population_fraction in enumerate(population_fraction_array):
-                    # print(k_population_fraction)
                     # The number of populations acc. to the scheme (2 for PPC and rate, 1 for DPC)
                     n_population = len(population_fraction)
                     if true_scheme.find('ppc') != -1 or true_scheme.find('dpc') != -1:
@@ -412,7 +410,7 @@ def compute_response_vector_weights(X):
                                                                                                k_fraction][k_direction][
                                                                                                k_session]))
 
-    y_with_noise = copy.deepcopy(y)
+    # y_with_noise = copy.deepcopy(y)
 
     # High-pass filtering
 
@@ -645,7 +643,7 @@ def get_scores(k_subject):
 
 
 #%%
-for k_subject in range(n_subjects):
+for k_subject in range(2, n_subjects):
     code_start = time.time()
     get_scores(k_subject)
     code_end = time.time()
