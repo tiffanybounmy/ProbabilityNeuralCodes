@@ -24,7 +24,7 @@ from nilearn import plotting
 
 #%%
 # Define directories
-rootdir = '/neurospin/unicog/protocols/IRMf/Meyniel_MarkovGuess_2014/'
+rootdir = '/neurospin/unicog/protocols/IRMf/Meyniel_MarkovGuess_2014'
 first_dir = 'ENCODAGE/first_level_analyses'
 second_dir = 'ENCODAGE/second_level_analyses'
 
@@ -47,12 +47,12 @@ def compute_global_masker(rootdir, FWHM=None):
     return masker
 
 #%%
-def compute_model_difference(model1, model2):
+def compute_model_difference(model1, model2, FWHM):
     """
     Compute, for each subject, the (masked) difference between two models and 
     save the result on disk
     """
-    masker = compute_global_masker(rootdir, FWHM=5)
+    masker = compute_global_masker(rootdir, FWHM=FWHM)
     
     fmri_model_1 = [masker.transform(f) for f in get_fmri_files(os.path.join(rootdir,
                     first_dir), model1)]
@@ -71,7 +71,7 @@ def compute_second_level(model1, model2, FWHM=None):
     models
     """
     # # compute and save the difference of two models
-    # compute_model_difference(model1, model2)   # compute with the FirstLevelAnalysis code
+    compute_model_difference(model1, model2, FWHM)   # compute with the FirstLevelAnalysis code
     
     # redefine the mask, without smoothing
     masker = compute_global_masker(rootdir)
@@ -101,9 +101,9 @@ def compute_second_level(model1, model2, FWHM=None):
 
 #%%
 # Compute the second-level analysis for a pair of models
-model1 = 'rate_mu'
-model2 = 'baseline'
-z_map, z_map_pos = compute_second_level(model1, model2)
+model1 = 'gaussian_dpc'
+model2 = 'gaussian_ppc_mu'
+z_map, z_map_pos = compute_second_level(model1, model2, 9)
 
 #%%
 # get surface mesh (fsaverage)
@@ -113,7 +113,7 @@ fsaverage = datasets.fetch_surf_fsaverage()
 # project volume onto surface
 # Caution: the projection is done for one hemisphere only, make sure to plot
 # (below) for the same hemisphere
-img_to_plot = surface.vol_to_surf(z_map_pos, fsaverage.pial_right)
+img_to_plot = surface.vol_to_surf(z_map, fsaverage.pial_left)
 
 #%%
 p_val = 0.05
@@ -121,12 +121,12 @@ p_unc = norm.isf(p_val)
 
 #%%
 # plot surface
-# note: the bg_map and hemi should be the same hemisphere as fsaverage.???
-plotting.plot_surf_stat_map(fsaverage.infl_right, img_to_plot, 
-                            hemi='right', bg_map=fsaverage.sulc_right,
+# note: the bg_map and hemi should be the same hemisphere as fsaverage.
+plotting.plot_surf_stat_map(fsaverage.infl_left, img_to_plot, 
+                            hemi='left', bg_map=fsaverage.sulc_left,
                             view='lateral', 
-                            title='Surface plot', colorbar=True,
-                            threshold=1.65)
+                            title=f"{model1}-{model2}, p<{p_val}", colorbar=True,
+                            threshold=p_unc)
 
 #%%
 # Plot glass brain of the z_map
@@ -141,12 +141,23 @@ display_pos = plotting.plot_glass_brain(
         z_map_pos, threshold=10, colorbar=True, display_mode='lyr', plot_abs=False,
         title=f"group {model1}-{model2} (unc p<{p_val})")
 
+#%% check slices
+p_val = 0.05
+p_unc = norm.isf(p_val)
+display_stat_map = plotting.plot_stat_map(
+        z_map, threshold=p_unc, colorbar=True,
+        cut_coords = 10,
+        display_mode = 'z',
+        title = f"group {model1}-{model2} (unc p<{p_val})")
+
+
 #%% check for the right intraparietal sulcus 
 p_val = 0.05
 p_unc = norm.isf(p_val)
 display_stat_map = plotting.plot_stat_map(
         z_map_pos, threshold=p_unc, colorbar=True, cut_coords=(32, -68, 59),
         title = f"group {model1}-{model2} (unc p<{p_val})")
+
 
 #%% check for the right inferior temporal gyrus 
 p_val = 0.05
