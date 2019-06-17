@@ -1,15 +1,16 @@
-##!/usr/bin/env python3
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+
 """
 Created on Wed Mar  6 13:58:22 2019
 @authors: Sébastien Demortain and Tiffany Bounmy
 
-Simulation in order to get the optimal number of tuning curve that will be used for each scheme
+Simulation in order to get the optimal number of tuning curves that will be used for
+each population codes' scheme
+(i.e. probabilistic population code and distributional population code)
 """
 
 #%% Import useful modules
-from typing import Iterable
-
 import numpy as np
 import random as rand
 import neural_proba
@@ -20,6 +21,7 @@ import copy
 import utils
 import multiprocessing as mp
 
+from typing import Iterable
 from scipy import io as sio
 from scipy.stats.stats import pearsonr
 from sklearn import linear_model
@@ -59,7 +61,6 @@ tc_upper_bound_mu = 1  # probability
 tc_lower_bound_conf = 1.1 # range found in this experiment
 tc_upper_bound_conf = 2.6 # range found in this experiment
 
-# !!! Florent, continue here.
 # The number of N to be tested
 n_N = len(N_array)
 
@@ -77,7 +78,7 @@ n_subjects = 1000
 n_directions = 16
 
 # Directions
-directions = np.array(list(itertools.product([0, 1], repeat=4)))
+directions = np.array(list(itertools.product([0, 1], repeat=4))) # all combinations of directions of encoding
 
 # The number of sessions
 n_sessions = 4
@@ -516,9 +517,7 @@ def cross_validation(k_subject):
     ### BEGINNING OF LOOPS OVER HYPERPARAMETERS
     for k_scheme, k_fit_N in itertools.product(range(n_schemes), range(n_N)):
         for k_true_N, k_fraction in itertools.product(range(n_N), range(n_fractions)):
-            # print('new k_true_N and k_fraction!')
-            k_direction = rand.randint(0, n_directions-1) # pick randomly
-            # print('picked direction:', k_direction)
+            k_direction = rand.randint(0, n_directions-1)
             # Current cross-validation matrix and response
             X_cv = copy.deepcopy(Xz[k_scheme][k_fit_N])
             y_without_noise_cv = copy.deepcopy(yz_without_noise[k_scheme][k_true_N][k_fraction][k_direction])
@@ -544,11 +543,11 @@ def cross_validation(k_subject):
                     X_train = copy.deepcopy(
                         np.concatenate(X_cv[k_dir][:k_session] + X_cv[k_dir][k_session + 1:], axis=0))
 
-                    regr.fit(X_train, y_train) # perform the training with y_with_noise
+                    regr.fit(X_train, y_train) # perform the training on noisy data
                     y_hat_train = regr.predict(X_train)
                     weights_train.append(regr.coef_)
 
-                    # Train results - save scores for all directions
+                    # Train results (save scores for all directions)
                     r2_raw_train_all[k_dir] = r2_score(y_train, y_hat_train)
                     rho_raw_train_all[k_dir] = pearsonr(y_train, y_hat_train)[0]
                     r2_true_train_all[k_dir] = r2_score(y_without_noise_train, y_hat_train)
@@ -568,10 +567,6 @@ def cross_validation(k_subject):
                     best_train_direction_i[0]]
 
                 regr.coef_ = weights_train[best_train_direction_i[0]] # save the weights
-                # X_train = copy.deepcopy(np.concatenate(
-                #    X_cv[best_train_direction_i[0]][:k_session] + X_cv[best_train_direction_i[0]][k_session + 1:],
-                #    axis=0)) # to delete because computationally too heavy
-                # regr.fit(X_train, y_train) # to do if we don't set the weights manually
 
                 # Make predictions using the testing set
                 y_test = copy.deepcopy(y_cv[k_session])
@@ -635,16 +630,8 @@ def get_scores(k_subject):
     np.save('/neurospin/unicog/protocols/IRMf/Meyniel_MarkovGuess_2014/ENCODAGE/cross_validation/output/results/snr0.1/'+str(distrib_type)+'/rho_true_test_snr'+str(snr)+'_subj' + str(k_subject) + '.npy', rho_true_test)
     print('subject '+str(k_subject)+' done!')
 
-
 #%%
-# Parallelisation
-#if __name__ == '__main__':
-#    pool = mp.Pool(int(mp.cpu_count()/2)) # Create a multiprocessing Pool
-#    pool.map(get_scores, range(n_subjects)) # process inputs iterable with pool
-
-
-#%%
-for k_subject in range(2, n_subjects):
+for k_subject in range(n_subjects):
     code_start = time.time()
     get_scores(k_subject)
     code_end = time.time()
