@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Thu May 23 15:54:36 2019
+Code to compute the difference of the rho-maps resulting from two different models fitting.
 
-@author: tb258044
+@authors: Florent Meyniel, Tiffany Bounmy
 """
 
 #%%
@@ -56,7 +56,6 @@ def save_difference(model1, model2, FWHM=None):
 
 #%%
 # Compute the second-level analysis for a pair of model
-# Ultimately: do it for all models
 model1 = 'rate_conf'
 model2 = 'baseline'
 save_difference(model1, model2, FWHM=5)
